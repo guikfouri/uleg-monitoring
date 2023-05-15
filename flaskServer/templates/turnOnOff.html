@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<title>Ligando ou desligando o ar condicionado</title>
+{% if command == "on" %}
+<h1>Ligando!</h1>
+{% elif command == "off" %}
+<h1>Desligando!</h1>
+{% else %}
+<h1>Ligue ou desligue o ar clicando nos botões</h1>
+{% endif %}
+
+<form method="POST" action="/turnOnOff/">
+  <input type="submit" name="turn_on" value="on" />
+  <input type="submit" name="turn_on" value="off" />
+</form>
