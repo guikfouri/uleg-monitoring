@@ -3,3 +3,4 @@ build/
 sdkconfig*
 __pycache__/
 .venv/
+app.db

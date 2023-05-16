@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Form Example</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <style>
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+      }
+
+      input[type="text"],
+      select {
+        width: 100%;
+        padding: 8px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      small {
+        font-style: italic;
+        color: #999;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <form method="POST" action="/addSensor/">
+      <div class="form-group">
+        <label for="label">Label:</label>
+        <input type="text" id="label" name="label" required />
+      </div>
+      <div class="form-group">
+        <label for="type">Type:</label>
+        <select id="type" name="type" required>
+          <option value="0">IR Sensor</option>
+          <option value="1">Door Sensor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="mac">MAC:</label>
+        <input
+          type="text"
+          id="mac"
+          name="mac"
+          pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+          required
+        />
+        <small>Format: XX:XX:XX:XX:XX:XX</small>
+      </div>
+      <div class="form-group">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+  </body>
+</html>

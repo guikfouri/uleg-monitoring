@@ -10,12 +10,10 @@ url = "http://192.168.0.119"
 def turnOnOff():
     if request.method == "POST":
         if request.form["turn_on"] == "on":
-            x = requests.post(url + "/turnOn", data={"command": "on"})
-            print(x.text)
+            requests.post(url + "/turnOn", data={"command": "on"})
             return render_template("turnOnOff.html", command="on")
         elif request.form["turn_on"] == "off":
-            x = requests.post(url + "/turnOn", data={"command": "off"})
-            print(x.text)
+            requests.post(url + "/turnOn", data={"command": "off"})
             return render_template("turnOnOff.html", command="off")
         else:
             return render_template("turnOnOff.html")
