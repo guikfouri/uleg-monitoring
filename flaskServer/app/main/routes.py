@@ -6,7 +6,8 @@ from app.models.sensor import Sensor
 
 @bp.route("/")
 def index():
-    return render_template("index.html")
+    sensors = Sensor.query.all()
+    return render_template("sensors.html", sensors=sensors)
 
 
 @bp.route("/addSensor/", methods=["GET", "POST"])
