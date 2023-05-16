@@ -1,17 +1,12 @@
-from flask import Flask, render_template, request
+from flask import render_template, request
+from app.main import bp
 import requests
 
-app = Flask(__name__)
 
 url = "http://192.168.0.119"
 
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
-
-
-@app.route("/turnOnOff/", methods=["GET", "POST"])
+@bp.route("/turnOnOff/", methods=["GET", "POST"])
 def turnOnOff():
     if request.method == "POST":
         if request.form["turn_on"] == "on":
