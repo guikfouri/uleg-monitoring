@@ -1,74 +1,37 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Form Example</title>
-    <link rel="stylesheet" type="text/css" href="styles.css" />
-    <style>
-      .form-group {
-        margin-bottom: 20px;
-      }
+{% extends 'base.html' %} {% block content %} {% set cur_page = "add_sensor" %}
 
-      label {
-        display: block;
-        font-weight: bold;
-      }
+<h1>{% block title %} Cadastre novos sensores {% endblock %}</h1>
+<h2>
+  Preencha o formulário abaixo passando o tipo e endereço MAC corretos do sensor
+</h2>
 
-      input[type="text"],
-      select {
-        width: 100%;
-        padding: 8px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-      }
+<form method="POST" action="/addSensor/">
+  <div class="mb-3">
+    <label for="name" class="form-label">Nome</label>
+    <input class="form-control" id="name" name="name" required type="text" />
+    <div id="labelHelp" class="form-text">
+      Escolha um nome para identificar o sensor.
+    </div>
+  </div>
+  <div class="mb-3">
+    <label for="type" class="form-label">Tipo de sensor</label>
+    <select id="type" name="type" required>
+      <option value="0">Sensor infravermelho</option>
+      <option value="1">Sensor de porta</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="macAddress">Endereço MAC:</label>
+    <input class="form-control" id="macAddress" name="macAddress" type="text" />
+    <small class="text-muted">Formato: XX:XX:XX:XX:XX:XX</small>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
 
-      small {
-        font-style: italic;
-        color: #999;
-      }
+<script>
+  $(document).ready(function () {
+    $("#macAddress").mask("00:00:00:00:00:00");
+  });
+</script>
 
-      button {
-        padding: 10px 20px;
-        font-size: 16px;
-        background-color: #4caf50;
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background-color: #45a049;
-      }
-    </style>
-  </head>
-  <body>
-    <form method="POST" action="/addSensor/">
-      <div class="form-group">
-        <label for="label">Label:</label>
-        <input type="text" id="label" name="label" required />
-      </div>
-      <div class="form-group">
-        <label for="type">Type:</label>
-        <select id="type" name="type" required>
-          <option value="0">IR Sensor</option>
-          <option value="1">Door Sensor</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="mac">MAC:</label>
-        <input
-          type="text"
-          id="mac"
-          name="mac"
-          pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
-          required
-        />
-        <small>Format: XX:XX:XX:XX:XX:XX</small>
-      </div>
-      <div class="form-group">
-        <button type="submit">Submit</button>
-      </div>
-    </form>
-  </body>
-</html>
+{% endblock %}

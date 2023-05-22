@@ -1,5 +1,5 @@
 from flask import Blueprint
 
-bp = Blueprint("IRSensors", __name__)
+bp = Blueprint("irSensors", __name__)
 
 from app.IRSensors import routes

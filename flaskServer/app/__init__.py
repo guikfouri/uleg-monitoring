@@ -16,6 +16,6 @@ def create_app(config_class=Config):
     from app.IRSensors import bp as irSensors_bp
 
     app.register_blueprint(main_bp)
-    app.register_blueprint(irSensors_bp, url_prefix="/irSensors")
+    app.register_blueprint(irSensors_bp)
 
     return app

@@ -2,54 +2,65 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>{% block title %} {% endblock %} - FlaskApp</title>
-    <style>
-      h2 {
-        width: 100%;
-      }
 
-      .title {
-        margin: 5px;
-        width: 100%;
-      }
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
 
-      .content {
-        margin: 5px;
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
+    <!-- Jquery JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
-      .post {
-        flex: 20%;
-        padding: 10px;
-        margin: 5px;
-        background-color: #f3f3f3;
-        inline-size: 100%;
-      }
-
-      .title a {
-        color: #00a36f;
-        text-decoration: none;
-      }
-
-      nav a {
-        color: #d64161;
-        font-size: 3em;
-        margin-left: 50px;
-        text-decoration: none;
-      }
-    </style>
+    <title>{% block title %} {% endblock %} - ULEG Monitoring</title>
   </head>
   <body>
-    <nav>
-      <a href="{{ url_for('main.index') }}">FlaskApp</a>
-      <a href="#">Posts</a>
-      <a href="#">Categories</a>
-      <a href="#">Questions</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">ULEG</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          {% set cur_page = cur_page|default('home') -%}
+
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if cur_page == 'home' }}"
+                href="{{ url_for('main.index') }}"
+                >Home</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {{'active' if cur_page == 'add_sensor' }}"
+                href="{{ url_for('main.addSensor') }}"
+                >Cadastrar sensor</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
     </nav>
-    <hr />
-    <div class="content">{% block content %} {% endblock %}</div>
+    <div class="container">{% block content %} {% endblock %}</div>
+
+    <!-- Bibliotecas JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% extends 'base.html' %} {% block content %}
 <title>Ligando ou desligando o ar condicionado</title>
 {% if command == "on" %}
 <h1>Ligando!</h1>
@@ -8,7 +8,21 @@
 <h1>Ligue ou desligue o ar clicando nos botões</h1>
 {% endif %}
 
-<form method="POST" action="/turnOnOff/">
-  <input type="submit" name="turn_on" value="on" />
-  <input type="submit" name="turn_on" value="off" />
+<form method="POST" action="/turnOnOff/{{sensor_id}}">
+  <div class="row">
+    <input
+      class="btn btn-primary col-6"
+      name="turn_on"
+      type="submit"
+      value="on"
+    />
+    <input
+      class="btn btn-primary col-6"
+      name="turn_on"
+      type="submit"
+      value="off"
+    />
+  </div>
 </form>
+
+{% endblock %}

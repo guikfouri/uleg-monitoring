@@ -1,8 +1,40 @@
-{% extends 'base.html' %} {% block content %}
-<span class="title"
-  ><h1>{% block title %} The Home Page of FlaskApp {% endblock %}</h1></span
->
-<div class="content">
-  <h2>This is the main Flask blueprint</h2>
+{% extends 'base.html' %} {% block content %} {% set cur_page = "home" %}
+
+<h1>{% block title %} Monitoramento ULEG {% endblock %}</h1>
+<h2>Gerencie e monitore os sensores abaixo</h2>
+<div class="row">
+  {% for sensor in sensors %}
+  <div class="col-12 col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">
+          {{ sensor.name }} <span class="float-end">#{{ sensor.id }}</span>
+        </h5>
+
+        <h6 class="card-subtitle mb-2 text-muted">{{ sensor.macAddress }}</h6>
+
+        <p class="card-text">
+          {% if sensor.type == 0 %} Sensor LG {% elif sensor.type == 1 %} Sensor
+          de porta {% else %} Sensor sem tipo {% endif %}
+        </p>
+
+        {% if sensor.type == 0 %}
+        <a
+          href="{{ url_for('main.turnOn', sensor_id= sensor.id) }}"
+          class="card-link"
+          >Ligar</a
+        >
+        <a
+          href="{{ url_for('main.turnOff', sensor_id= sensor.id) }}"
+          class="card-link"
+          >Desligar</a
+        >
+        {% elif sensor.type == 1 %}
+        <p class="m-0">Última leitura:</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% endblock %}
