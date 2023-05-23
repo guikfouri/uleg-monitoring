@@ -1,11 +1,11 @@
 {% extends 'base.html' %} {% block content %}
-<title>Ligando ou desligando o ar condicionado</title>
+<h1>Ligando ou desligando o ar condicionado</h1>
 {% if command == "on" %}
-<h1>Ligando!</h1>
+<h2>Ligando!</h2>
 {% elif command == "off" %}
-<h1>Desligando!</h1>
+<h2>Desligando!</h2>
 {% else %}
-<h1>Ligue ou desligue o ar clicando nos botões</h1>
+<h2>Ligue ou desligue o ar clicando nos botões</h2>
 {% endif %}
 
 <form method="POST" action="/turnOnOff/{{sensor_id}}">

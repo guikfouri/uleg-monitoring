@@ -1,0 +1,27 @@
+{% extends 'base.html' %} {% block content %}
+<h1>
+  Histórico do sensor: {{ sensor.name }}<span class="float-end"
+    >#{{ sensor.id }}</span
+  >
+</h1>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Data e Hora</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for read in sensor.readings|reverse %}
+
+    <tr>
+      <td>{{ read.created_at }}</td>
+      <td>{% if read.value == 0 %} Fechada {% else %} Aberta {% endif %}</td>
+    </tr>
+
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

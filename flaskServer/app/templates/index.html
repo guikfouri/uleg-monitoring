@@ -4,7 +4,7 @@
 <h2>Gerencie e monitore os sensores abaixo</h2>
 <div class="row">
   {% for sensor in sensors %}
-  <div class="col-12 col-md-4">
+  <div class="col-12 col-md-4 mb-4">
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">
@@ -19,19 +19,89 @@
         </p>
 
         {% if sensor.type == 0 %}
-        <a
-          href="{{ url_for('main.turnOn', sensor_id= sensor.id) }}"
-          class="card-link"
-          >Ligar</a
-        >
-        <a
-          href="{{ url_for('main.turnOff', sensor_id= sensor.id) }}"
-          class="card-link"
-          >Desligar</a
-        >
+        <div>
+          <a
+            href="{{ url_for('main.turnOn', sensor_id= sensor.id) }}"
+            class="card-link"
+            >Ligar</a
+          >
+          <a
+            href="{{ url_for('main.turnOff', sensor_id= sensor.id) }}"
+            class="card-link"
+            >Desligar</a
+          >
+        </div>
         {% elif sensor.type == 1 %}
-        <p class="m-0">Última leitura:</p>
+        <div class="d-flex justify-content-between">
+          {% if sensor.readings|length > 0 %}
+          <p class="m-0">
+            Última leitura: {% if sensor.readings[-1].value == 0 %} Fechada {%
+            else %} Aberta {% endif %}
+          </p>
+          {% endif %}
+          <a
+            href="{{ url_for('main.showDoorHistoric', sensor_id= sensor.id) }}"
+            class="card-link"
+            >Ver histórico</a
+          >
+        </div>
         {% endif %}
+
+        <!-- Button trigger modal -->
+        <button
+          type="button"
+          class="btn btn-primary mt-3"
+          data-bs-toggle="modal"
+          data-bs-target="#removeSensorModal{{ sensor.id }}"
+        >
+          Remover sensor
+        </button>
+
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="removeSensorModal{{ sensor.id }}"
+          tabindex="-1"
+          aria-labelledby="removeSensorModalLabel{{ sensor.id }}"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5
+                  class="modal-title"
+                  id="removeSensorModalLabel{{ sensor.id }}"
+                >
+                  Remover sensor
+                </h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div class="modal-body">
+                Deseja mesmo remover o sensor
+                <strong>"{{ sensor.name }}"</strong>?
+              </div>
+              <div class="modal-footer">
+                <form method="POST" action="/deleteSensor/{{ sensor.id }}/">
+                  <button
+                    type="submit"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Fechar
+                  </button>
+                  <button type="submit" class="btn btn-danger">
+                    Remover sensor
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

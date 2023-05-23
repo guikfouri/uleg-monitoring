@@ -14,8 +14,10 @@ def create_app(config_class=Config):
     # Register blueprints here
     from app.main import bp as main_bp
     from app.IRSensors import bp as irSensors_bp
+    from app.DoorSensors import bp as doorSensors_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(irSensors_bp)
+    app.register_blueprint(doorSensors_bp)
 
     return app
