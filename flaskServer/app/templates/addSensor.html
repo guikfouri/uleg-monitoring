@@ -30,7 +30,11 @@
 
 <script>
   $(document).ready(function () {
-    $("#macAddress").mask("00:00:00:00:00:00");
+    $("#macAddress").mask("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ", {
+      translation: {
+        Z: { pattern: /[A-Z0-9\s]/ },
+      },
+    });
   });
 </script>
 
