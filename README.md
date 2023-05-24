@@ -1,6 +1,8 @@
 # TODO
 
-- Fazer servidor wifi no esp receber o endereço mac
+- Consertar timezone
+- Consertar item nav ativo
+
 - Fazer servidor wifi no esp mandar status dos sensores de porta
 
 ## Flask

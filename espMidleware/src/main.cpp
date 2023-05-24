@@ -64,14 +64,16 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-void sendEspNowData(struct_message data)
+void sendEspNowData(struct_message data, uint8_t broadcastAddress[])
 {
   Serial.println(data.cmd);
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
 
   if (result == ESP_OK)
   {
-    Serial.println("Sent with success");
+    Serial.print("Sent command: ");
+    Serial.print(data.cmd);
+    Serial.println(" with success");
   }
   else
   {
@@ -79,18 +81,31 @@ void sendEspNowData(struct_message data)
   }
 }
 
-void turnAirOn()
+void turnAirOn(uint8_t broadcastAddress[])
 {
   struct_message data;
   data.cmd = POWER_ON;
-  sendEspNowData(data);
+  sendEspNowData(data, broadcastAddress);
 }
 
-void turnAirOff()
+void turnAirOff(uint8_t broadcastAddress[])
 {
   struct_message data;
   data.cmd = POWER_OFF;
-  sendEspNowData(data);
+  sendEspNowData(data, broadcastAddress);
+}
+
+void addPeer(uint8_t broadcastAddress[]) {
+  // Register peer
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.encrypt = false;
+
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
+    Serial.println("Failed to add peer");
+    return;
+  }
 }
 
 void setup()
@@ -121,20 +136,22 @@ void setup()
 
   server.on("/turnOn", HTTP_POST, [](AsyncWebServerRequest *request) {
     int paramsNr = request->params(); // number of params (e.g., 1)
-    Serial.println(paramsNr);
-    Serial.println();
 
-    AsyncWebParameter * j = request->getParam(0); // 1st parameter
-    String value = j->value();
-    Serial.print("Value: ");
-    Serial.print(value);
-    Serial.println();
+    AsyncWebParameter * command = request->getParam(0); // command
+    String commandValue = command->value();
 
-    if (value == "on") {
-      turnAirOn();
+    AsyncWebParameter * mac = request->getParam(1); // mac
+    String macValue = mac->value();
+    std::vector<uint8_t> myVector(macValue.begin(), macValue.end());
+    uint8_t *broadcastAddress = &myVector[0];
+
+    addPeer(broadcastAddress);
+
+    if (commandValue == "on") {
+      turnAirOn(broadcastAddress);
       request->send(200);
-    } else if (value == "off") {
-      turnAirOff();
+    } else if (commandValue == "off") {
+      turnAirOff(broadcastAddress);
       request->send(200);
     } else {
       request->send(404);
@@ -150,20 +167,11 @@ void setup()
     return;
   }
 
+  addPeer(broadcastAddress);
+
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(onDataSent);
-
-  // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.encrypt = false;
-
-  // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
-    Serial.println("Failed to add peer");
-    return;
-  }
 
   delay(1000);
 }
