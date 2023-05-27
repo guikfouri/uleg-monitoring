@@ -3,7 +3,7 @@
 - Consertar timezone
 - Consertar item nav ativo
 
-- Fazer servidor wifi no esp mandar status dos sensores de porta
+- Fazer sensor de porta mandar status e mac para o middleware
 
 ## Flask
 
