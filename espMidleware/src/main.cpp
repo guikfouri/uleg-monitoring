@@ -3,6 +3,7 @@
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
 #include <Arduino_JSON.h>
+#include <HTTPClient.h>
 
 #define POWER_OFF '0'
 #define POWER_ON '1'
@@ -17,6 +18,17 @@ uint8_t broadcastAddress[] = {0x3C, 0x61, 0x05, 0x65, 0x68, 0xEC};
 
 const char *ssid = "VaiCorinthians2.4";
 const char *password = "23132211";
+
+//Your Domain name with URL path or IP address with path
+const char* serverName = "http://192.168.0.9:5000/setDoorStatus/";
+
+// the following variables are unsigned longs because the time, measured in
+// milliseconds, will quickly become a bigger number than can be stored in an int.
+unsigned long lastTime = 0;
+// Timer set to 10 minutes (600000)
+//unsigned long timerDelay = 600000;
+// Set timer to 5 seconds (5000)
+unsigned long timerDelay = 5000;
 
 AsyncWebServer server(80);
 
@@ -108,6 +120,29 @@ void addPeer(uint8_t broadcastAddress[]) {
   }
 }
 
+void updateDoorSensorStatus(String mac_addr, String status) {
+  //Check WiFi connection status
+  if(WiFi.status()== WL_CONNECTED){
+    WiFiClient client;
+    HTTPClient http;
+  
+    // Your Domain name with URL path or IP address with path
+    http.begin(client, serverName);
+    
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + status + "}");
+    
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+      
+    // Free resources
+    http.end();
+  }
+  else {
+    Serial.println("WiFi Disconnected");
+  }
+}
+
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -176,4 +211,16 @@ void setup()
   delay(1000);
 }
 
-void loop() {}
+String status = "true";
+
+void loop() {
+  if ((millis() - lastTime) > timerDelay) {
+    updateDoorSensorStatus("3C:61:05:65:68:EC", status);
+    lastTime = millis();
+    if (status == "true") {
+      status = "false";
+    } else {
+      status = "true";
+    }
+  }
+}

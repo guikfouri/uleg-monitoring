@@ -1,7 +1,8 @@
-from flask import render_template, request
+from flask import abort, render_template, request
 from app.extensions import db
 from app.main import bp
 from app.models.sensor import Sensor, Read
+from sqlalchemy.exc import NoResultFound
 
 
 url = "http://192.168.0.119"
@@ -18,12 +19,20 @@ def showDoorHistoric(sensor_id):
 def setDoorStatus():
     request_data = request.get_json()
 
-    sensor_id = request_data["sensor_id"]
+    macAddress = request_data["macAddress"]
     status = request_data["status"]
 
-    new_read = Read(value=status, sensor_id=sensor_id)
+    try:
+        sensor = Sensor.query.filter(Sensor.macAddress == macAddress).one()
+        sensor_id = sensor.id
 
-    db.session.add(new_read)
-    db.session.commit()
+        new_read = Read(value=status, sensor_id=sensor_id)
 
-    return "Added read {} for sensor {}".format(status, sensor_id)
+        db.session.add(new_read)
+        db.session.commit()
+
+        return "Added read {} for sensor {}".format(status, sensor_id)
+    except NoResultFound:
+        abort(404)
+    except:
+        abort(500)
