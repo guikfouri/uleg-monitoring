@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
 #include <Arduino_JSON.h>
@@ -45,27 +46,48 @@ char cmd = POWER_ON;
 // Create a struct_message called myData
 struct_message myData;
 
-JSONVar sensor;
-
 esp_now_peer_info_t peerInfo;
+
+void updateDoorSensorStatus(String mac_addr, String status) {
+  //Check WiFi connection status
+  if(WiFi.status()== WL_CONNECTED){
+    WiFiClient client;
+    HTTPClient http;
+  
+    // Your Domain name with URL path or IP address with path
+    http.begin(client, serverName);
+    
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + status + "}");
+    
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+      
+    // Free resources
+    http.end();
+  }
+  else {
+    Serial.println("WiFi Disconnected");
+  }
+}
 
 // callback function that will be executed when data is received
 void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len)
 {
   // Copies the sender mac address to a string
   char macStr[18];
-  Serial.print("Packet received from: ");
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  Serial.println(macStr);
   memcpy(&myData, incomingData, sizeof(myData));
 
-  sensor["id"] = myData.id;
-  sensor["cmd"] = myData.cmd;
-  String jsonString = JSON.stringify(sensor);
+  String status = myData.cmd == POWER_ON ? "true" : "false";
 
-  Serial.printf("Sensor ID %u: %u bytes\n", myData.id, len);
-  Serial.printf("Command: %c \n", myData.cmd);
+  // updateDoorSensorStatus(macStr, status);
+  updateDoorSensorStatus("3C:61:05:65:68:EC", status);
+
+  Serial.printf("Sensor mac: ");
+  Serial.println(macStr);
+  Serial.printf("Status: %s \n", status);
   Serial.println();
 }
 
@@ -120,27 +142,19 @@ void addPeer(uint8_t broadcastAddress[]) {
   }
 }
 
-void updateDoorSensorStatus(String mac_addr, String status) {
-  //Check WiFi connection status
-  if(WiFi.status()== WL_CONNECTED){
-    WiFiClient client;
-    HTTPClient http;
-  
-    // Your Domain name with URL path or IP address with path
-    http.begin(client, serverName);
-    
-    http.addHeader("Content-Type", "application/json");
-    int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + status + "}");
-    
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-      
-    // Free resources
-    http.end();
-  }
-  else {
-    Serial.println("WiFi Disconnected");
-  }
+int32_t getWiFiChannel(const char *ssid)
+{
+    if (int32_t n = WiFi.scanNetworks())
+    {
+        for (uint8_t i = 0; i < n; i++)
+        {
+            if (!strcmp(ssid, WiFi.SSID(i).c_str()))
+            {
+                return WiFi.channel(i);
+            }
+        }
+    }
+    return 0;
 }
 
 void setup()
@@ -152,6 +166,9 @@ void setup()
 
   // Set the device as a Station and Soft Access Point simultaneously
   WiFi.mode(WIFI_AP_STA);
+
+  int32_t channel = getWiFiChannel(ssid);
+  esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
 
   // Set device as a Wi-Fi Station
   WiFi.begin(ssid, password);
@@ -207,6 +224,7 @@ void setup()
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(onDataSent);
+  esp_now_register_recv_cb(onDataRecv);
 
   delay(1000);
 }
@@ -215,7 +233,7 @@ String status = "true";
 
 void loop() {
   if ((millis() - lastTime) > timerDelay) {
-    updateDoorSensorStatus("3C:61:05:65:68:EC", status);
+    // updateDoorSensorStatus("3C:61:05:65:68:EC", status);
     lastTime = millis();
     if (status == "true") {
       status = "false";
