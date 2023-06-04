@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "PinDefinitionsAndMore.h" // Define macros for input and output pin etc.
-#include "IRremote/IRremote.hpp"
-#include "IRremote/ac_LG.hpp"
+#include "IRremoteESP8266/IRremoteESP8266.h"
+#include "IRremoteESP8266/ir_Hitachi.h"
+#include "IRremoteESP8266/IRsend.h"
 #include "WiFi.h"
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -44,7 +45,10 @@ struct_message myData;
 
 char sRequestString[SIZE_OF_RECEIVE_BUFFER];
 
-Aircondition_LG MyLG_Aircondition;
+IRsend irsend(4);  // An IR LED is controlled by GPIO pin 4
+// 0 : off
+// 1 : on
+unsigned int ac_power_on = 0;
 
 // Insert your SSID
 constexpr char WIFI_SSID[] = "VaiCorinthians2.4";
