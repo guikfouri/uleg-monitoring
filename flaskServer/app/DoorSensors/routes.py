@@ -5,9 +5,6 @@ from app.models.sensor import Sensor, Read
 from sqlalchemy.exc import NoResultFound
 
 
-url = "http://192.168.0.119"
-
-
 @bp.route("/showDoorHistoric/<sensor_id>/")
 def showDoorHistoric(sensor_id):
     sensor = Sensor.query.get(sensor_id)
@@ -23,7 +20,7 @@ def setDoorStatus():
     status = request_data["status"]
 
     try:
-        sensor = Sensor.query.filter(Sensor.macAddress == macAddress).one()
+        sensor = Sensor.query.filter(Sensor.macAddress == macAddress.upper()).one()
         sensor_id = sensor.id
 
         new_read = Read(value=status, sensor_id=sensor_id)
@@ -34,5 +31,6 @@ def setDoorStatus():
         return "Added read {} for sensor {}".format(status, sensor_id)
     except NoResultFound:
         abort(404)
-    except:
+    except Exception as e:
+        print(e)
         abort(500)

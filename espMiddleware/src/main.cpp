@@ -6,6 +6,9 @@
 #include <Arduino_JSON.h>
 #include <HTTPClient.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
 #define POWER_OFF '0'
 #define POWER_ON '1'
 
@@ -35,8 +38,7 @@ AsyncWebServer server(80);
 
 // Structure to send data
 // Must match the receiver structure
-typedef struct struct_message
-{
+typedef struct struct_message {
   int id = SENSOR_ID; // Id that represents which device it is
   char cmd;
 } struct_message;
@@ -50,13 +52,12 @@ esp_now_peer_info_t peerInfo;
 
 void updateDoorSensorStatus(String mac_addr, String status) {
   //Check WiFi connection status
-  if(WiFi.status()== WL_CONNECTED){
+  if (WiFi.status()== WL_CONNECTED) {
     WiFiClient client;
     HTTPClient http;
   
     // Your Domain name with URL path or IP address with path
     http.begin(client, serverName);
-    
     http.addHeader("Content-Type", "application/json");
     int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + status + "}");
     
@@ -65,65 +66,53 @@ void updateDoorSensorStatus(String mac_addr, String status) {
       
     // Free resources
     http.end();
-  }
-  else {
+  } else {
     Serial.println("WiFi Disconnected");
   }
 }
 
+QueueHandle_t queue;
+
 // callback function that will be executed when data is received
-void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len)
-{
+void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
   // Copies the sender mac address to a string
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   memcpy(&myData, incomingData, sizeof(myData));
 
-  String status = myData.cmd == POWER_ON ? "true" : "false";
-
-  // updateDoorSensorStatus(macStr, status);
-  updateDoorSensorStatus("3C:61:05:65:68:EC", status);
-
-  Serial.printf("Sensor mac: ");
+  Serial.printf("Sensor's MAC: ");
   Serial.println(macStr);
-  Serial.printf("Status: %s \n", status);
-  Serial.println();
+
+  xQueueSend(queue, &macStr, portMAX_DELAY);
 }
 
 // callback when data is sent
-void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
-{
+void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-void sendEspNowData(struct_message data, uint8_t broadcastAddress[])
-{
+void sendEspNowData(struct_message data, uint8_t broadcastAddress[]) {
   Serial.println(data.cmd);
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
 
-  if (result == ESP_OK)
-  {
+  if (result == ESP_OK) {
     Serial.print("Sent command: ");
     Serial.print(data.cmd);
     Serial.println(" with success");
-  }
-  else
-  {
+  } else {
     Serial.println("Error sending the data");
   }
 }
 
-void turnAirOn(uint8_t broadcastAddress[])
-{
+void turnAirOn(uint8_t broadcastAddress[]) {
   struct_message data;
   data.cmd = POWER_ON;
   sendEspNowData(data, broadcastAddress);
 }
 
-void turnAirOff(uint8_t broadcastAddress[])
-{
+void turnAirOff(uint8_t broadcastAddress[]) {
   struct_message data;
   data.cmd = POWER_OFF;
   sendEspNowData(data, broadcastAddress);
@@ -135,30 +124,24 @@ void addPeer(uint8_t broadcastAddress[]) {
   peerInfo.encrypt = false;
 
   // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.println("Failed to add peer");
     return;
   }
 }
 
-int32_t getWiFiChannel(const char *ssid)
-{
-    if (int32_t n = WiFi.scanNetworks())
-    {
-        for (uint8_t i = 0; i < n; i++)
-        {
-            if (!strcmp(ssid, WiFi.SSID(i).c_str()))
-            {
-                return WiFi.channel(i);
-            }
-        }
+int32_t getWiFiChannel(const char *ssid) {
+  if (int32_t n = WiFi.scanNetworks()) {
+    for (uint8_t i = 0; i < n; i++) {
+      if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
+        return WiFi.channel(i);
+      }
     }
-    return 0;
+  }
+  return 0;
 }
 
-void setup()
-{
+void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // Initialize Serial Monitor
@@ -213,8 +196,7 @@ void setup()
   server.begin();
 
   // Init ESP-NOW
-  if (esp_now_init() != ESP_OK)
-  {
+  if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
@@ -226,19 +208,37 @@ void setup()
   esp_now_register_send_cb(onDataSent);
   esp_now_register_recv_cb(onDataRecv);
 
+  //Check WiFi connection status
+  if (WiFi.status()== WL_CONNECTED) {
+    WiFiClient client;
+    HTTPClient http;
+  
+    // Your Domain name with URL path or IP address with path
+    http.begin(client, serverName);
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+
+  queue = xQueueCreate(10, sizeof(char) * 18 );
+ 
+  if (queue == NULL) {
+    Serial.println("Error creating the queue");
+  }
+
   delay(1000);
 }
 
 String status = "true";
 
 void loop() {
-  if ((millis() - lastTime) > timerDelay) {
-    // updateDoorSensorStatus("3C:61:05:65:68:EC", status);
-    lastTime = millis();
-    if (status == "true") {
-      status = "false";
-    } else {
-      status = "true";
-    }
+  if (queue == NULL) return;
+ 
+  char macStr[18];
+
+  if (xQueueReceive(queue, &macStr, portMAX_DELAY)) {
+    updateDoorSensorStatus(macStr, status);
   }
+ 
+  Serial.println();
+  delay(1000);
 }
