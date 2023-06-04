@@ -3,8 +3,6 @@
 - Consertar timezone
 - Consertar item nav ativo
 
-- Fazer sensor de porta mandar status e mac para o middleware
-
 ## Flask
 
 Use "set" in Windows
