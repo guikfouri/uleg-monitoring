@@ -3,10 +3,12 @@
 #include <esp_wifi.h>
 #include "WiFi.h"
 
-#define POWER_OFF '0'
-#define POWER_ON '1'
+#define DOOR_OPEN '0'
+#define DOOR_CLOSED '1'
 
 #define LED_BUILTIN 2
+
+#define  SENSOR_PIN 4
 
 // Set sensor id
 #define SENSOR_ID 0
@@ -23,11 +25,8 @@ typedef struct struct_message
   char cmd;
 } struct_message;
 
-char cmd = POWER_ON;
-
 // Create a struct_message called myData
 struct_message myData;
-
 
 esp_now_peer_info_t peerInfo;
 
@@ -38,34 +37,27 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 
-void sendEspNowData(struct_message data)
-{
-  Serial.println(data.cmd);
+void sendEspNowData(struct_message data) {
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
 
-  if (result == ESP_OK)
-  {
+  if (result == ESP_OK) {
     Serial.print("Sent command: ");
     Serial.print(data.cmd);
     Serial.println(" with success");
-  }
-  else
-  {
+  } else {
     Serial.println("Error sending the data");
   }
 }
 
-void turnAirOn()
-{
+void sendDoorOpen() {
   struct_message data;
-  data.cmd = POWER_ON;
+  data.cmd = DOOR_OPEN;
   sendEspNowData(data);
 }
 
-void turnAirOff()
-{
+void sendDoorClosed() {
   struct_message data;
-  data.cmd = POWER_OFF;
+  data.cmd = DOOR_CLOSED;
   sendEspNowData(data);
 }
 
@@ -75,8 +67,7 @@ void addPeer() {
   peerInfo.encrypt = false;
 
   // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.println("Failed to add peer");
     return;
   }
@@ -97,8 +88,7 @@ int32_t getWiFiChannel(const char *ssid)
     return 0;
 }
 
-void setup()
-{
+void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // Initialize Serial Monitor
@@ -111,8 +101,7 @@ void setup()
   esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
 
   // Init ESP-NOW
-  if (esp_now_init() != ESP_OK)
-  {
+  if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
@@ -123,20 +112,49 @@ void setup()
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(onDataSent);
 
+  pinMode (SENSOR_PIN, INPUT);
+
   delay(1000);
 }
 
-int val = 0;
+char doorStatus = DOOR_OPEN;
+int previousRead = 0;
+bool isVariating = false;
+bool firstVariation = false;
+unsigned long previousMillistemprst = 0;
+const int tempresetinterval = 1000;
 
 void loop() {
-  val = hallRead();
-  Serial.println(val);
+  unsigned long currentMillis = millis();
+  int currentRead = digitalRead(SENSOR_PIN);
 
-  if (val > 130) {
-    turnAirOn();
-  } else if (val < 90) {
-    turnAirOff();
+  // Verifica se está variando
+  if (currentRead != previousRead) {
+    if (firstVariation == false) {
+      firstVariation = true;
+    } else {
+      isVariating = true;
+    }
   }
 
-  delay(1000);
+  // Após 1 segundo
+  if (currentMillis - previousMillistemprst > tempresetinterval) {
+    // Se no espaço de um segundo não houver variação considera porta fechada
+    if (isVariating == false && currentRead == LOW && doorStatus == DOOR_OPEN) {
+      doorStatus = DOOR_CLOSED;
+      sendDoorClosed();
+    }
+
+    // Se no espaço de um segundo houver variação considera porta aberta
+    if (isVariating == true && doorStatus == DOOR_CLOSED) {
+      doorStatus = DOOR_OPEN;
+      sendDoorOpen();
+    }
+
+    isVariating = false;
+    firstVariation = false;
+    previousMillistemprst = currentMillis;
+  }
+
+  previousRead = currentRead;
 }

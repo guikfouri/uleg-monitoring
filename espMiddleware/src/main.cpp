@@ -12,6 +12,9 @@
 #define POWER_OFF '0'
 #define POWER_ON '1'
 
+#define DOOR_OPEN '0'
+#define DOOR_CLOSED '1'
+
 #define LED_BUILTIN 2
 
 // Set sensor id
@@ -43,14 +46,12 @@ typedef struct struct_message {
   char cmd;
 } struct_message;
 
-char cmd = POWER_ON;
-
 // Create a struct_message called myData
 struct_message myData;
 
 esp_now_peer_info_t peerInfo;
 
-void updateDoorSensorStatus(String mac_addr, String status) {
+void updateDoorSensorStatus(String mac_addr, char status) {
   //Check WiFi connection status
   if (WiFi.status()== WL_CONNECTED) {
     WiFiClient client;
@@ -59,7 +60,18 @@ void updateDoorSensorStatus(String mac_addr, String status) {
     // Your Domain name with URL path or IP address with path
     http.begin(client, serverName);
     http.addHeader("Content-Type", "application/json");
-    int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + status + "}");
+    
+    String statusStr;
+    if (status == DOOR_OPEN) {
+      statusStr = "true";
+    } else if (status == DOOR_CLOSED) {
+      statusStr = "false";
+    } else {
+      Serial.println("Invalid status for door sensor");
+      return;
+    }
+    
+    int httpResponseCode = http.POST("{\"macAddress\":\"" + mac_addr + "\",\"status\":" + statusStr + "}");
     
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
@@ -75,12 +87,15 @@ QueueHandle_t queue;
 
 // callback function that will be executed when data is received
 void onDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
-  // Copies the sender mac address to a string
-  char macStr[18];
-  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
   memcpy(&myData, incomingData, sizeof(myData));
 
+  // Copies the sender mac address to a string
+  char macStr[19];
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x%c",
+           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5], myData.cmd);
+
+  Serial.printf("Status: ");
+  Serial.println(myData.cmd);
   Serial.printf("Sensor's MAC: ");
   Serial.println(macStr);
 
@@ -219,7 +234,7 @@ void setup() {
     Serial.println("WiFi Disconnected");
   }
 
-  queue = xQueueCreate(10, sizeof(char) * 18 );
+  queue = xQueueCreate(10, sizeof(char) * 19 );
  
   if (queue == NULL) {
     Serial.println("Error creating the queue");
@@ -228,15 +243,19 @@ void setup() {
   delay(1000);
 }
 
-String status = "true";
-
 void loop() {
   if (queue == NULL) return;
  
+  char macStatusStr[19];
   char macStr[18];
+  char status;
 
-  if (xQueueReceive(queue, &macStr, portMAX_DELAY)) {
-    updateDoorSensorStatus(macStr, status);
+  if (xQueueReceive(queue, &macStatusStr, portMAX_DELAY)) {
+    for (int i = 0; i < 17; i++) {
+      macStr[i] = macStatusStr[i];
+    }
+
+    updateDoorSensorStatus(macStr, macStatusStr[17]);
   }
  
   Serial.println();
